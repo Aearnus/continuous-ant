@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
         thread_pool.push_front(std::thread([out_string, i](){
             std::ofstream img_out(image_file_name(i));
             img_out << out_string;
-            std::cout << "rendered frame " << image_file_name(i) << std::cout;
+            std::cout << "rendered frame " << image_file_name(i) << std::endl;
         }));
     }
     std::for_each(thread_pool.begin(), thread_pool.end(), [](std::thread& t) { t.join(); });

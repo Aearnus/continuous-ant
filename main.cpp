@@ -49,7 +49,10 @@ struct World {
             if (influence == 0.0) { return val; }
 
             // this is what the value would be after one whole time step
-            double val_prime = 1 - val;
+            // https://www.desmos.com/calculator/2iwbt9hjdr
+            // double val_prime = 1 - val;
+            // double val_prime = -std::log(val + (1 / std::exp(1.0)));
+            double val_prime = 1.0 - std::pow(val, 2.0);
             double out = lerp(val, val_prime, t * influence);
 
             // ensure that calculation error didn't bite us in the ass
@@ -185,19 +188,25 @@ std::string image_file_name(long i) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
+    if (argc != 3) {
+        std::cout << "usage: " << argv[0] << " <total_frames> <ticks_per_frame>" << std::endl;
         return 1;
     }
+    long long total_frames = atoll(argv[1]);
+    long long ticks_per_frame = atoll(argv[2]);
+
     World world = World(400, 0.1);
     std::list<std::thread> thread_pool;
-    for (long i = 0; i < atoll(argv[1]); i++) {
+    for (long long i = 0; i < total_frames * ticks_per_frame; i++) {
         world.tick(0.01);
-        std::string out_string = world.return_pgm();
-        thread_pool.push_front(std::thread([out_string, i](){
-            std::ofstream img_out(image_file_name(i));
-            img_out << out_string;
-            std::cout << "rendered frame " << image_file_name(i) << std::endl;
-        }));
+        if (i % ticks_per_frame == 0) {
+            std::string out_string = world.return_pgm();
+            thread_pool.emplace_front([out_string, i, ticks_per_frame](){
+                std::ofstream img_out(image_file_name(i / ticks_per_frame));
+                img_out << out_string;
+                std::cout << "rendered frame " << image_file_name(i / ticks_per_frame) << std::endl;
+            });
+        }
     }
     std::for_each(thread_pool.begin(), thread_pool.end(), [](std::thread& t) { t.join(); });
     return 0;
